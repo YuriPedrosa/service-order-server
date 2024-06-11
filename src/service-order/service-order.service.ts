@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ServiceOrder } from 'src/db/entities/service-order.entity';
 import { Repository } from 'typeorm';
@@ -10,17 +10,35 @@ export class ServiceOrderService {
     private serviceOrderRepository: Repository<ServiceOrder>,
   ) {}
 
-  createServiceOrder(serviceOrder: ServiceOrder): Promise<ServiceOrder> {
+  create(serviceOrder: ServiceOrder): Promise<ServiceOrder> {
     return this.serviceOrderRepository.save(serviceOrder);
   }
 
-  getServiceOrderById(id: number): Promise<ServiceOrder> {
+  getById(id: number): Promise<ServiceOrder> {
     return this.serviceOrderRepository.findOne({ where: { id } });
   }
 
-  getAllByDate(date: Date): Promise<ServiceOrder[]> {
+  getAllByDate(date: Date | string): Promise<ServiceOrder[]> {
+    if (typeof date === 'string') {
+      date = new Date(date);
+    }
+
     return this.serviceOrderRepository.find({
       where: { date },
+    });
+  }
+
+  update(id: number, serviceOrder: ServiceOrder): Promise<ServiceOrder> {
+    const serviceOrderOld = this.getById(id);
+
+    if (!serviceOrderOld) {
+      throw new NotFoundException();
+    }
+
+    return this.serviceOrderRepository.save({
+      ...serviceOrderOld,
+      ...serviceOrder,
+      id,
     });
   }
 }
